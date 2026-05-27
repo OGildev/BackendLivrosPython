@@ -15,13 +15,22 @@
 # Update
 # Delete
 
+# Query Strings
+
 # Comando para inicializar servidor: fastapi dev .\Aula1.py
 
 from fastapi import FastAPI, HTTPException # type: ignore
+from pydantic import BaseModel
+from typing import Optional
 
 app = FastAPI()
 
 livros = {}
+
+class Livro(BaseModel):
+    nome_livro: str
+    autor_livro: str
+    ano_livro: int
 
 @app.get("/livros")
 def get_livros():
@@ -36,25 +45,20 @@ def get_livros():
 # ano de lançamento do livro
 
 @app.post("/adicionar")
-def post_livros(id_livro: int, nome_livro: str, autor_livro: str, ano_livro: int):
+def post_livros(id_livro: int, livro: Livro): # Alteração feita para referenciar a classe Livro a fim de não precisarmos utilizar Query Strings nas chamadas do método POST
     if id_livro in livros:
         raise HTTPException(status_code=400, detail="Esse livro já existe!")
     else:
-        livros[id_livro] = {"nome_livro": nome_livro, "autor_livro": autor_livro, "ano_livro": ano_livro}
+        livros[id_livro] = livro.dict() # Alteração feita pois não estamos mais passando como parametro os campos. Eles estão referenciados na classe. Código antigo: {"nome_livro": nome_livro, "autor_livro": autor_livro, "ano_livro": ano_livro}
         return {"message": "O livro foi criado com sucesso"}
     
 @app.put("/atualizar/{id_livro}")
-def put_livros(id_livro: int, nome_livro: str, autor_livro: str, ano_livro: int):
+def put_livros(id_livro: int, livro: Livro):
     livro = livros.get(id_livro)
     if not livro:
         raise HTTPException(status_code=404, detail="Esse livro não foi encontrado!")
     else:
-        if nome_livro:
-            livro["nome_livro"] = nome_livro
-        if autor_livro: 
-            livro["autor_livro"] = autor_livro
-        if ano_livro:
-            livro["ano_livro"] = ano_livro
+        livro[id_livro] = livro.dict()
 
         return {"message": "As informações do seu livro foram atualizados com sucesso!"}
     
