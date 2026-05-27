@@ -21,6 +21,8 @@
 
 # Documentação Swagger -> Documentar os endpoints da nossa aplicação da nossa API
 
+from tracemalloc import start
+
 from fastapi import FastAPI, HTTPException, Depends # type: ignore
 from fastapi.security import HTTPBasic, HTTPBasicCredentials # type: ignore
 from pydantic import BaseModel # type: ignore
@@ -66,11 +68,26 @@ def hello_world():
     return {"Hello": "World!"}
 
 @app.get("/livros")
-def get_livros(credentials: HTTPBasicCredentials = Depends(autenticacao)):
+def get_livros(page: int = 1, limit: int = 10, credentials: HTTPBasicCredentials = Depends(autenticacao)):
+    if page < 1 or limit < 1:
+        raise HTTPException(status_code=300, detail="Page e limit estão incorretos! Eles devem ser maiores que 0!")
+
     if not livros:
         return {"message": "Não existe nenhum livro"} 
-    else:
-        return {"livros": livros} 
+        
+    start = (page - 1) * limit
+    end = start + limit
+    
+    livros_paginados = [
+        {"id": id_livro, "nome_livro": livro_data["nome_livro"], "autor_livro": livro_data["autor_livro"], "ano_livro": livro_data["ano_livro"]}
+        for id_livro, livro_data in list(livros.items())[start:end]
+    ]
+    return {
+        "page": page,
+        "limit": limit,
+        "total_livros": len(livros),
+        "livros": livros_paginados
+        } 
 
 # id do livro
 # nome do livro
