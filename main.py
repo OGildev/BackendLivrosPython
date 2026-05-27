@@ -19,11 +19,21 @@
 
 # Comando para inicializar servidor: fastapi dev .\Aula1.py
 
+# Documentação Swagger -> Documentar os endpoints da nossa aplicação da nossa API
+
 from fastapi import FastAPI, HTTPException # type: ignore
 from pydantic import BaseModel
 from typing import Optional
 
-app = FastAPI()
+app = FastAPI(
+    title="API de Livros",
+    description="API para gerenciar catálogo de livros",
+    version="1.0.0",
+    contact={
+        "name":"Gilberto Lima",
+        "email":"gilbertolima3004@gmail.com"
+    }
+)
 
 livros = {}
 
@@ -31,6 +41,10 @@ class Livro(BaseModel):
     nome_livro: str
     autor_livro: str
     ano_livro: int
+
+@app.get("/")
+def hello_world():
+    return {"Hello": "World!"}
 
 @app.get("/livros")
 def get_livros():
