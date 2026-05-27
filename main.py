@@ -21,9 +21,12 @@
 
 # Documentação Swagger -> Documentar os endpoints da nossa aplicação da nossa API
 
-from fastapi import FastAPI, HTTPException # type: ignore
-from pydantic import BaseModel
+from fastapi import FastAPI, HTTPException, Depends # type: ignore
+from fastapi.security import HTTPBasic, HTTPBasicCredentials # type: ignore
+from pydantic import BaseModel # type: ignore
 from typing import Optional
+import secrets
+import os
 
 app = FastAPI(
     title="API de Livros",
@@ -31,9 +34,25 @@ app = FastAPI(
     version="1.0.0",
     contact={
         "name":"Gilberto Lima",
-        "email":"gilbertolima3004@gmail.com"
+        "email":"ogildev@gmail.com"
     }
 )
+
+USUARIO = "admin"
+SENHA = "admin"
+
+security = HTTPBasic()
+
+def autenticacao(credentials: HTTPBasicCredentials = Depends(security)):
+    is_username_correct = secrets.compare_digest(credentials.username, USUARIO)
+    is_password_correct = secrets.compare_digest(credentials.password, SENHA)
+
+    if not (is_username_correct and is_password_correct):
+        raise HTTPException(
+            status_code=401,
+            detail="Usuário ou senha incorretos",
+            headers={"WWW-Authenticate": "Basic"},
+        )
 
 livros = {}
 
@@ -47,7 +66,7 @@ def hello_world():
     return {"Hello": "World!"}
 
 @app.get("/livros")
-def get_livros():
+def get_livros(credentials: HTTPBasicCredentials = Depends(autenticacao)):
     if not livros:
         return {"message": "Não existe nenhum livro"} 
     else:
@@ -59,7 +78,7 @@ def get_livros():
 # ano de lançamento do livro
 
 @app.post("/adicionar")
-def post_livros(id_livro: int, livro: Livro): # Alteração feita para referenciar a classe Livro a fim de não precisarmos utilizar Query Strings nas chamadas do método POST
+def post_livros(id_livro: int, livro: Livro, credentials: HTTPBasicCredentials = Depends(autenticacao)): # Alteração feita para referenciar a classe Livro a fim de não precisarmos utilizar Query Strings nas chamadas do método POST
     if id_livro in livros:
         raise HTTPException(status_code=400, detail="Esse livro já existe!")
     else:
@@ -67,7 +86,7 @@ def post_livros(id_livro: int, livro: Livro): # Alteração feita para referenci
         return {"message": "O livro foi criado com sucesso"}
     
 @app.put("/atualizar/{id_livro}")
-def put_livros(id_livro: int, livro: Livro): # Alteração feita para referenciar a classe Livro a fim de não precisarmos utilizar Query Strings nas chamadas do método POST
+def put_livros(id_livro: int, livro: Livro, credentials: HTTPBasicCredentials = Depends(autenticacao)): # Alteração feita para referenciar a classe Livro a fim de não precisarmos utilizar Query Strings nas chamadas do método POST
     meu_livro = livros.get(id_livro)
     if not meu_livro:
         raise HTTPException(status_code=404, detail="Esse livro não foi encontrado!")
@@ -76,7 +95,7 @@ def put_livros(id_livro: int, livro: Livro): # Alteração feita para referencia
         return {"message": "As informações do seu livro foram atualizados com sucesso!"}
     
 @app.delete("/deletar/{id_livro}")
-def delete_livro(id_livro: int):
+def delete_livro(id_livro: int, credentials: HTTPBasicCredentials = Depends(autenticacao)):
     if id_livro not in livros:
         raise HTTPException(status_code=404, detail="Esse livro não foi encontrado!")
     else:
