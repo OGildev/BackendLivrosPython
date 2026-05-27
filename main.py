@@ -53,12 +53,12 @@ def post_livros(id_livro: int, livro: Livro): # Alteração feita para referenci
         return {"message": "O livro foi criado com sucesso"}
     
 @app.put("/atualizar/{id_livro}")
-def put_livros(id_livro: int, livro: Livro):
+def put_livros(id_livro: int, livro: Livro): # Alteração feita para referenciar a classe Livro a fim de não precisarmos utilizar Query Strings nas chamadas do método POST
     livro = livros.get(id_livro)
     if not livro:
         raise HTTPException(status_code=404, detail="Esse livro não foi encontrado!")
     else:
-        livro[id_livro] = livro.dict()
+        livro[id_livro] = livro.dict() # Alteração feita pois não estamos mais passando como parametro os campos. Eles estão referenciados na classe. Código antigo: {"nome_livro": nome_livro, "autor_livro": autor_livro, "ano_livro": ano_livro}
 
         return {"message": "As informações do seu livro foram atualizados com sucesso!"}
     
